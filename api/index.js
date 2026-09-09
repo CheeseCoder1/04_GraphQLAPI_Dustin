@@ -1,16 +1,21 @@
 import { ApolloServer } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
+import { expressMiddleware } from '@apollo/server/express4';
+import express from 'express';
+import cors from 'cors';
 
 import { typeDefs } from './schema.js';
 import { resolvers } from './resolvers.js';
 
+const app = express();
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  introspection: true, 
 });
 
-const { url } = await startStandaloneServer(server, {
-  listen: { port: 4000 },
-});
+await server.start();
 
-console.log(`🚀 GraphQL Server ready at: ${url}`);
+app.use('/graphql', cors(), express.json(), expressMiddleware(server));
+
+export default app;
