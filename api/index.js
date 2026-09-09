@@ -1,8 +1,5 @@
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@as-integrations/express5';
-import express from 'express';
-import cors from 'cors';
-
+import { startStandaloneServer } from '@apollo/server/standalone';
 import { typeDefs } from './schema.js';
 import { resolvers } from './resolvers.js';
 
@@ -12,18 +9,54 @@ const server = new ApolloServer({
   introspection: true,
 });
 
-let app;
+let handler;
 
 if (process.env.VERCEL) {
+  // For Vercel Serverless: Start server once and map standard HTTP incoming requests
   await server.start();
-  app = express();
-  app.use(cors(), express.json(), expressMiddleware(server));
+  
+  handler = async (req, res) => {
+    // Handle CORS headers so Apollo Sandbox can talk to it
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type, apollo-require-preflight');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    // Parse incoming request body for GraphQL operations
+    let body = '';
+    for await (const chunk of req) {
+      body += chunk;
+    }
+    
+    let jsonBody = {};
+    try {
+      jsonBody = body ? JSON.parse(body) : {};
+    } catch (e) {
+      jsonBody = {};
+    }
+
+    // Execute through Apollo Server's internal executeOperation
+    const response = await server.executeOperation({
+      query: jsonBody.query,
+      variables: jsonBody.variables,
+      operationName: jsonBody.operationName,
+    });
+
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(response);
+  };
 } else {
-  const { startStandaloneServer } = await import('@apollo/server/standalone');
+  // Local development standalone server
   const { url } = await startStandaloneServer(server, {
     listen: { port: 4000 },
   });
   console.log(`🚀 Local dev server ready at ${url}`);
 }
 
-export default app;
+export default handler || (async (req, res) => {
+  res.status(404).send('Not in Vercel mode');
+});
