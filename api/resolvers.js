@@ -1,45 +1,69 @@
-import { pool } from '../db.js';
+import pg from 'pg';
+const { Pool } = pg;
 
-let categoryTransactionsCallCount = 0;
+// Database connection using the environment variable
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+// Counter variable to track resolver execution count across queries
+let callCount = 0;
 
 export const resolvers = {
   Query: {
+    // Fetch all categories
     categories: async () => {
-      // Reset the counter every time you run the main query
-      categoryTransactionsCallCount = 0; 
-      const result = await pool.query('SELECT * FROM categories');
-      return result.rows;
+      const { rows } = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+      return rows;
     },
+
+    // Fetch all transactions
     transactions: async () => {
-      const result = await pool.query('SELECT * FROM transactions');
-      return result.rows;
+      const { rows } = await pool.query('SELECT * FROM transactions ORDER BY id ASC');
+      return rows;
     },
+
+    // Fetch a single transaction by ID
     transaction: async (_, { id }) => {
-      const result = await pool.query('SELECT * FROM transactions WHERE id = $1', [id]);
-      return result.rows[0];
-    }
+      const { rows } = await pool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+      return rows[0] || null;
+    },
   },
+
   Transaction: {
+    // Increments and returns the count every time an individual transaction is resolved
+    resolverCallCount: () => {
+      callCount += 1;
+      return callCount;
+    },
+
+    // Format timestamps to match GraphQL String if stored as DATE/TIMESTAMP in PostgreSQL
+    createdAt: (parent) => {
+      const date = parent.created_at || parent.createdAt;
+      return date ? new Date(date).toISOString() : null;
+    },
+
+    // Resolve the category relationship for each transaction (handles category_id or categoryId)
     category: async (parent) => {
-      const result = await pool.query('SELECT * FROM categories WHERE id = $1', [parent.category_id]);
-      return result.rows[0];
-    }
+      const categoryId = parent.category_id || parent.categoryId;
+      if (!categoryId) return null;
+
+      const { rows } = await pool.query('SELECT * FROM categories WHERE id = $1', [categoryId]);
+      return rows[0] || null;
+    },
   },
+
   Category: {
+    // Resolve all transactions associated with this specific category
     transactions: async (parent) => {
-      // 1. Increment the counter
-      categoryTransactionsCallCount++;
-      
-      // 2. Output to the server terminal
-      console.log(`[N+1 Problem] Resolver Category.transactions called for Category ID ${parent.id}! Total: ${categoryTransactionsCallCount}`);
-      
-      const result = await pool.query('SELECT * FROM transactions WHERE category_id = $1', [parent.id]);
-      
-      // 3. Inject the counter into the temporary field in the response
-      return result.rows.map(row => ({
-        ...row,
-        resolverCallCount: categoryTransactionsCallCount
-      }));
-    }
-  }
+      const { rows } = await pool.query(
+        'SELECT * FROM transactions WHERE category_id = $1 ORDER BY id ASC',
+        [parent.id]
+      );
+      return rows;
+    },
+  },
 };
