@@ -38,20 +38,22 @@ export const resolvers = {
     },
 
     category: async (parent) => {
-      // ADD THE DEBUG LOG HERE:
-      console.log("Transaction Row:", parent);
-
+      // 1. Increment the global counter
       relationCounter += 1; 
       
-      const categoryId = parent.category_id || parent.categoryId;
+      // 2. Capture the value instantly before any async database calls
+      const currentCount = relationCounter; 
       
+      const categoryId = parent.category_id || parent.categoryId;
       if (!categoryId) return null;
 
+      // 3. Wait for the database
       const { rows } = await pool.query('SELECT * FROM categories WHERE id = $1', [categoryId]);
       const category = rows[0];
       
       if (category) {
-        category.relationCallCount = relationCounter;
+        // 4. Assign the captured local value, not the global one
+        category.relationCallCount = currentCount;
       }
       return category || null;
     },
