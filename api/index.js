@@ -12,11 +12,9 @@ const server = new ApolloServer({
 let handler;
 
 if (process.env.VERCEL) {
-  // For Vercel Serverless: Start server once and map standard HTTP incoming requests
   await server.start();
   
   handler = async (req, res) => {
-    // Handle CORS headers so Apollo Sandbox can talk to it
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'content-type, apollo-require-preflight');
@@ -26,7 +24,6 @@ if (process.env.VERCEL) {
       return;
     }
 
-    // Parse incoming request body for GraphQL operations
     let body = '';
     for await (const chunk of req) {
       body += chunk;
@@ -35,11 +32,10 @@ if (process.env.VERCEL) {
     let jsonBody = {};
     try {
       jsonBody = body ? JSON.parse(body) : {};
-    } catch (e) {
+    } catch {
       jsonBody = {};
     }
 
-    // Execute through Apollo Server's internal executeOperation
     const response = await server.executeOperation({
       query: jsonBody.query,
       variables: jsonBody.variables,
@@ -47,10 +43,16 @@ if (process.env.VERCEL) {
     });
 
     res.setHeader('Content-Type', 'application/json');
-    res.status(200).json(response);
+
+    // Extract the GraphQL payload (data/errors) and status code
+    const statusCode = response.http?.status || 200;
+    const result = response.body.kind === 'single' 
+      ? response.body.singleResult 
+      : response.body;
+
+    res.status(statusCode).json(result);
   };
 } else {
-  // Local development standalone server
   const { url } = await startStandaloneServer(server, {
     listen: { port: 4000 },
   });

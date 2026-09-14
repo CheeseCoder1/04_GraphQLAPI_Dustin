@@ -13,6 +13,7 @@ export const typeDefs = `
     description: String
     createdAt: String
     category: Category
+    resolverCallCount: Int 
   }
 
   type Query {
