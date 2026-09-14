@@ -4,6 +4,7 @@ export const typeDefs = `
     name: String!
     type: String!
     transactions: [Transaction!]!
+    relationCallCount: Int 
   }
 
   type Transaction {
@@ -13,7 +14,7 @@ export const typeDefs = `
     description: String
     createdAt: String
     category: Category
-    resolverCallCount: Int 
+    relationCallCount: Int
   }
 
   type Query {
