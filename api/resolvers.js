@@ -38,15 +38,18 @@ export const resolvers = {
     },
 
     category: async (parent) => {
-      relationCounter += 1; // Increment for each relation call
+      // ADD THE DEBUG LOG HERE:
+      console.log("Transaction Row:", parent);
+
+      relationCounter += 1; 
       
       const categoryId = parent.category_id || parent.categoryId;
+      
       if (!categoryId) return null;
 
       const { rows } = await pool.query('SELECT * FROM categories WHERE id = $1', [categoryId]);
       const category = rows[0];
       
-      // Inject the current counter value into the returned object
       if (category) {
         category.relationCallCount = relationCounter;
       }
