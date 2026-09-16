@@ -33,7 +33,10 @@ export const resolvers = {
 
   // === TAMBAHKAN BLOK MUTATION INI ===
   Mutation: {
-    createTransaction: async (_, { amount, type, description, categoryId }) => {
+    createTransaction: async (_, { input }) => {
+      // Destructure the values directly from the input object
+      const { amount, type, description, categoryId } = input;
+      
       const { rows } = await pool.query(
         `INSERT INTO transactions (amount, type, description, category_id) 
          VALUES ($1, $2, $3, $4) 
@@ -43,8 +46,9 @@ export const resolvers = {
       return rows[0];
     },
 
-    updateTransaction: async (_, { id, amount, type, description, categoryId }) => {
-      // Menggunakan COALESCE agar nilai yang tidak dikirim tidak tertimpa menjadi null
+    updateTransaction: async (_, { id, input }) => {
+      const { amount, type, description, categoryId } = input;
+      
       const { rows } = await pool.query(
         `UPDATE transactions 
          SET amount = COALESCE($1, amount), 
@@ -63,7 +67,6 @@ export const resolvers = {
         'DELETE FROM transactions WHERE id = $1',
         [id]
       );
-      // Mengembalikan true jika ada baris yang terhapus, false jika id tidak ditemukan
       return rowCount > 0;
     }
   },

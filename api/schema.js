@@ -23,9 +23,23 @@ export const typeDefs = `
     transaction(id: ID!): Transaction
   }
 
+  input CreateTransactionInput {
+    amount: Float!
+    type: String!
+    description: String
+    categoryId: ID!
+  }
+
+  input UpdateTransactionInput {
+    amount: Float
+    type: String
+    description: String
+    categoryId: ID
+  }
+
   type Mutation {
-    createTransaction(amount: Float!, type: String!, description: String, categoryId: ID!): Transaction!
-    updateTransaction(id: ID!, amount: Float, type: String, description: String, categoryId: ID): Transaction
+    createTransaction(input: CreateTransactionInput!): Transaction!
+    updateTransaction(id: ID!, input: UpdateTransactionInput!): Transaction
     deleteTransaction(id: ID!): Boolean!
   }
 `;
