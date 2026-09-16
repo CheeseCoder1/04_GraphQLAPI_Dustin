@@ -31,12 +31,10 @@ export const resolvers = {
     },
   },
 
-  // === TAMBAHKAN BLOK MUTATION INI ===
   Mutation: {
+    // --- TRANSACTION MUTATIONS ---
     createTransaction: async (_, { input }) => {
-      // Destructure the values directly from the input object
       const { amount, type, description, categoryId } = input;
-      
       const { rows } = await pool.query(
         `INSERT INTO transactions (amount, type, description, category_id) 
          VALUES ($1, $2, $3, $4) 
@@ -48,7 +46,6 @@ export const resolvers = {
 
     updateTransaction: async (_, { id, input }) => {
       const { amount, type, description, categoryId } = input;
-      
       const { rows } = await pool.query(
         `UPDATE transactions 
          SET amount = COALESCE($1, amount), 
@@ -68,9 +65,41 @@ export const resolvers = {
         [id]
       );
       return rowCount > 0;
+    },
+
+    // --- CATEGORY MUTATIONS ---
+    createCategory: async (_, { input }) => {
+      const { name, type } = input;
+      const { rows } = await pool.query(
+        `INSERT INTO categories (name, type) 
+         VALUES ($1, $2) 
+         RETURNING *`,
+        [name, type]
+      );
+      return rows[0];
+    },
+
+    updateCategory: async (_, { id, input }) => {
+      const { name, type } = input;
+      const { rows } = await pool.query(
+        `UPDATE categories 
+         SET name = COALESCE($1, name), 
+             type = COALESCE($2, type)
+         WHERE id = $3 
+         RETURNING *`,
+        [name, type, id]
+      );
+      return rows[0] || null;
+    },
+
+    deleteCategory: async (_, { id }) => {
+      const { rowCount } = await pool.query(
+        'DELETE FROM categories WHERE id = $1',
+        [id]
+      );
+      return rowCount > 0;
     }
   },
-  // ===================================
 
   Transaction: {
     createdAt: (parent) => {
