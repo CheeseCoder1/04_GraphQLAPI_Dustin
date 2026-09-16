@@ -36,8 +36,9 @@ export const resolvers = {
     createTransaction: async (_, { input }) => {
       const { amount, type, description, categoryId } = input;
       const { rows } = await pool.query(
-        `INSERT INTO transactions (amount, type, description, category_id) 
-         VALUES ($1, $2, $3, $4) 
+        // Added user_id to the INSERT statement and 1 to the VALUES
+        `INSERT INTO transactions (amount, type, description, category_id, user_id) 
+         VALUES ($1, $2, $3, $4, 1) 
          RETURNING *`,
         [amount, type, description, categoryId]
       );
@@ -71,8 +72,9 @@ export const resolvers = {
     createCategory: async (_, { input }) => {
       const { name, type } = input;
       const { rows } = await pool.query(
-        `INSERT INTO categories (name, type) 
-         VALUES ($1, $2) 
+        // Added user_id to the INSERT statement and 1 to the VALUES
+        `INSERT INTO categories (name, type, user_id) 
+         VALUES ($1, $2, 1) 
          RETURNING *`,
         [name, type]
       );
