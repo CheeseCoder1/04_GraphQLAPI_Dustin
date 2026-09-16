@@ -14,13 +14,13 @@ let relationCounter = 0;
 export const resolvers = {
   Query: {
     categories: async () => {
-      relationCounter = 0; // Reset counter for testing
+      relationCounter = 0; 
       const { rows } = await pool.query('SELECT * FROM categories ORDER BY id ASC');
       return rows;
     },
 
     transactions: async () => {
-      relationCounter = 0; // Reset counter for testing
+      relationCounter = 0; 
       const { rows } = await pool.query('SELECT * FROM transactions ORDER BY id ASC');
       return rows;
     },
@@ -31,6 +31,44 @@ export const resolvers = {
     },
   },
 
+  // === TAMBAHKAN BLOK MUTATION INI ===
+  Mutation: {
+    createTransaction: async (_, { amount, type, description, categoryId }) => {
+      const { rows } = await pool.query(
+        `INSERT INTO transactions (amount, type, description, category_id) 
+         VALUES ($1, $2, $3, $4) 
+         RETURNING *`,
+        [amount, type, description, categoryId]
+      );
+      return rows[0];
+    },
+
+    updateTransaction: async (_, { id, amount, type, description, categoryId }) => {
+      // Menggunakan COALESCE agar nilai yang tidak dikirim tidak tertimpa menjadi null
+      const { rows } = await pool.query(
+        `UPDATE transactions 
+         SET amount = COALESCE($1, amount), 
+             type = COALESCE($2, type), 
+             description = COALESCE($3, description), 
+             category_id = COALESCE($4, category_id)
+         WHERE id = $5 
+         RETURNING *`,
+        [amount, type, description, categoryId, id]
+      );
+      return rows[0] || null;
+    },
+
+    deleteTransaction: async (_, { id }) => {
+      const { rowCount } = await pool.query(
+        'DELETE FROM transactions WHERE id = $1',
+        [id]
+      );
+      // Mengembalikan true jika ada baris yang terhapus, false jika id tidak ditemukan
+      return rowCount > 0;
+    }
+  },
+  // ===================================
+
   Transaction: {
     createdAt: (parent) => {
       const date = parent.created_at || parent.createdAt;
@@ -38,21 +76,16 @@ export const resolvers = {
     },
 
     category: async (parent) => {
-      // 1. Increment the global counter
       relationCounter += 1; 
-      
-      // 2. Capture the value instantly before any async database calls
       const currentCount = relationCounter; 
       
       const categoryId = parent.category_id || parent.categoryId;
       if (!categoryId) return null;
 
-      // 3. Wait for the database
       const { rows } = await pool.query('SELECT * FROM categories WHERE id = $1', [categoryId]);
       const category = rows[0];
       
       if (category) {
-        // 4. Assign the captured local value, not the global one
         category.relationCallCount = currentCount;
       }
       return category || null;
@@ -61,14 +94,13 @@ export const resolvers = {
 
   Category: {
     transactions: async (parent) => {
-      relationCounter += 1; // Increment for each relation call
+      relationCounter += 1; 
       
       const { rows } = await pool.query(
         'SELECT * FROM transactions WHERE category_id = $1 ORDER BY id ASC',
         [parent.id]
       );
       
-      // Inject the current counter value into every returned transaction object
       return rows.map(row => ({
         ...row,
         relationCallCount: relationCounter

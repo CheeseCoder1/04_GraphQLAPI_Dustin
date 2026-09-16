@@ -22,4 +22,10 @@ export const typeDefs = `
     transactions: [Transaction!]!
     transaction(id: ID!): Transaction
   }
+
+  type Mutation {
+    createTransaction(amount: Float!, type: String!, description: String, categoryId: ID!): Transaction!
+    updateTransaction(id: ID!, amount: Float, type: String, description: String, categoryId: ID): Transaction
+    deleteTransaction(id: ID!): Boolean!
+  }
 `;
