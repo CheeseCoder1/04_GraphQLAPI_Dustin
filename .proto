@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package transaction;
+
+// Defined to support the nested category field in Transaction
+message Category {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  repeated Transaction transactions = 4;
+  optional int32 relation_call_count = 5;
+}
+
+message Transaction {
+  string id = 1;
+  float amount = 2;
+  string type = 3;
+  optional string description = 4;
+  optional string created_at = 5;
+  Category category = 6;
+  optional int32 relation_call_count = 7;
+}
+
+message GetTransactionRequest {
+  string id = 1;
+}
+
+service TransactionService {
+  rpc GetTransaction (GetTransactionRequest) returns (Transaction);
+}
