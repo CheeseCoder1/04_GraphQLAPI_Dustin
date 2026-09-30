@@ -34,7 +34,7 @@ export const resolvers = {
   Mutation: {
     // --- TRANSACTION MUTATIONS ---
     createTransaction: async (_, { input }, context) => {
-      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      if (!context.user) throw new Error('Unauthorized: Please login in first');
       
       const { amount, type, description, categoryId } = input;
       const { rows } = await pool.query(
@@ -47,7 +47,7 @@ export const resolvers = {
     },
 
     updateTransaction: async (_, { id, input }, context) => {
-      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      if (!context.user) throw new Error('Unauthorized: Please login in first');
       
       const { amount, type, description, categoryId } = input;
       const { rows } = await pool.query(
@@ -64,7 +64,7 @@ export const resolvers = {
     },
 
     deleteTransaction: async (_, { id }, context) => {
-      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      if (!context.user) throw new Error('Unauthorized: Please login in first');
       
       const { rowCount } = await pool.query(
         'DELETE FROM transactions WHERE id = $1',
@@ -75,7 +75,7 @@ export const resolvers = {
 
     // --- CATEGORY MUTATIONS ---
     createCategory: async (_, { input }, context) => {
-      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      if (!context.user) throw new Error('Unauthorized: Please login in first');
       
       const { name, type } = input;
       const { rows } = await pool.query(
@@ -88,7 +88,7 @@ export const resolvers = {
     },
 
     updateCategory: async (_, { id, input }, context) => {
-      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      if (!context.user) throw new Error('Unauthorized: Please login in first');
       
       const { name, type } = input;
       const { rows } = await pool.query(
@@ -103,7 +103,7 @@ export const resolvers = {
     },
 
     deleteCategory: async (_, { id }, context) => {
-      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      if (!context.user) throw new Error('Unauthorized: Please login in first');
       
       const { rowCount } = await pool.query(
         'DELETE FROM categories WHERE id = $1',
