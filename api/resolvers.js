@@ -33,10 +33,11 @@ export const resolvers = {
 
   Mutation: {
     // --- TRANSACTION MUTATIONS ---
-    createTransaction: async (_, { input }) => {
+    createTransaction: async (_, { input }, context) => {
+      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      
       const { amount, type, description, categoryId } = input;
       const { rows } = await pool.query(
-        // Added user_id to the INSERT statement and 1 to the VALUES
         `INSERT INTO transactions (amount, type, description, category_id, user_id) 
          VALUES ($1, $2, $3, $4, 1) 
          RETURNING *`,
@@ -45,7 +46,9 @@ export const resolvers = {
       return rows[0];
     },
 
-    updateTransaction: async (_, { id, input }) => {
+    updateTransaction: async (_, { id, input }, context) => {
+      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      
       const { amount, type, description, categoryId } = input;
       const { rows } = await pool.query(
         `UPDATE transactions 
@@ -60,7 +63,9 @@ export const resolvers = {
       return rows[0] || null;
     },
 
-    deleteTransaction: async (_, { id }) => {
+    deleteTransaction: async (_, { id }, context) => {
+      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      
       const { rowCount } = await pool.query(
         'DELETE FROM transactions WHERE id = $1',
         [id]
@@ -69,10 +74,11 @@ export const resolvers = {
     },
 
     // --- CATEGORY MUTATIONS ---
-    createCategory: async (_, { input }) => {
+    createCategory: async (_, { input }, context) => {
+      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      
       const { name, type } = input;
       const { rows } = await pool.query(
-        // Added user_id to the INSERT statement and 1 to the VALUES
         `INSERT INTO categories (name, type, user_id) 
          VALUES ($1, $2, 1) 
          RETURNING *`,
@@ -81,7 +87,9 @@ export const resolvers = {
       return rows[0];
     },
 
-    updateCategory: async (_, { id, input }) => {
+    updateCategory: async (_, { id, input }, context) => {
+      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      
       const { name, type } = input;
       const { rows } = await pool.query(
         `UPDATE categories 
@@ -94,7 +102,9 @@ export const resolvers = {
       return rows[0] || null;
     },
 
-    deleteCategory: async (_, { id }) => {
+    deleteCategory: async (_, { id }, context) => {
+      if (!context.user) throw new Error('Unauthorized: silakan login terlebih dahulu');
+      
       const { rowCount } = await pool.query(
         'DELETE FROM categories WHERE id = $1',
         [id]
